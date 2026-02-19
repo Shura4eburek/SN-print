@@ -13,8 +13,10 @@ from telegram.ext import (
 from generator import generate_qr, generate_barcode
 
 load_dotenv()
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-WEBAPP_URL = os.getenv("WEBAPP_URL", "")
+BOT_TOKEN   = os.getenv("BOT_TOKEN")
+WEBAPP_URL  = os.getenv("WEBAPP_URL", "")
+WEBHOOK_URL = os.getenv("WEBHOOK_URL", "")   # https://your-app.up.railway.app
+PORT        = int(os.getenv("PORT", 0))      # Railway выставляет автоматически
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -65,8 +67,19 @@ def main() -> None:
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_serial))
 
-    logger.info("Бот запущен")
-    app.run_polling()
+    if PORT and WEBHOOK_URL:
+        # Railway / production: webhook
+        logger.info("Запуск в режиме webhook на порту %d", PORT)
+        app.run_webhook(
+            listen="0.0.0.0",
+            port=PORT,
+            url_path=BOT_TOKEN,
+            webhook_url=f"{WEBHOOK_URL.rstrip('/')}/{BOT_TOKEN}",
+        )
+    else:
+        # Локально: polling
+        logger.info("Запуск в режиме polling")
+        app.run_polling()
 
 
 if __name__ == "__main__":

@@ -1,3 +1,4 @@
+import asyncio
 import os
 import logging
 from dotenv import load_dotenv
@@ -35,9 +36,14 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def handle_serial(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     serial = update.message.text.strip()
 
+    loop = asyncio.get_event_loop()
     try:
-        qr_buf = generate_qr(serial)
-        bar_buf = generate_barcode(serial)
+        # Запускаем CPU-тяжёлую генерацию в thread pool,
+        # чтобы не блокировать event loop при параллельных запросах
+        qr_buf, bar_buf = await asyncio.gather(
+            loop.run_in_executor(None, generate_qr, serial),
+            loop.run_in_executor(None, generate_barcode, serial),
+        )
     except Exception as e:
         logger.error("Generation error: %s", e)
         await update.message.reply_text(f"Ошибка генерации: {e}")

@@ -11,109 +11,211 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
+      min-height: 100vh;
+      background: #fff;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ── Переключатель типа ── */
+    .type-bar {
+      display: flex;
+      gap: 8px;
+      padding: 12px 16px;
+      width: 100%;
+      border-bottom: 1px solid #e5e5e5;
+      justify-content: center;
+      background: var(--tg-theme-bg-color, #fff);
+    }
+    .type-btn {
+      padding: 8px 24px;
+      border-radius: 20px;
+      border: 2px solid var(--tg-theme-button-color, #2481cc);
+      background: transparent;
+      color: var(--tg-theme-button-color, #2481cc);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+    }
+    .type-btn.active {
+      background: var(--tg-theme-button-color, #2481cc);
+      color: var(--tg-theme-button-text-color, #fff);
+    }
+
+    /* ── Область кода ── */
+    .code-area {
+      flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      min-height: 100vh;
-      background: #fff;
-      font-family: sans-serif;
-      gap: 20px;
-      padding: 24px;
+      padding: 20px 16px 12px;
+      gap: 16px;
+      width: 100%;
     }
 
-    #code {
+    #code-container {
       display: flex;
-      align-items: center;
       justify-content: center;
+      align-items: center;
     }
-    #code img, #code canvas {
-      max-width: min(80vw, 80vh);
-      max-height: min(80vw, 80vh);
+    #code-container img,
+    #code-container canvas {
+      max-width: min(80vw, 68vh);
+      max-height: min(80vw, 68vh);
     }
-    #code svg {
-      max-width: 90vw;
+    #code-container svg {
+      max-width: 92vw;
       height: auto;
     }
 
-    #label {
-      font-size: 14px;
-      color: #666;
-      letter-spacing: 0.05em;
+    .serial-text {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: clamp(14px, 3.5vw, 22px);
+      font-weight: 700;
+      text-align: center;
+      letter-spacing: 0.04em;
+      color: #000;
+      word-break: break-all;
+      line-height: 1.45;
     }
 
-    #print-btn {
-      padding: 13px 36px;
+    /* ── Кнопка печати ── */
+    .print-btn {
+      width: calc(100% - 32px);
+      max-width: 420px;
+      padding: 14px;
+      margin: 0 16px 20px;
       font-size: 16px;
-      font-weight: 600;
+      font-weight: 700;
       background: var(--tg-theme-button-color, #2481cc);
       color: var(--tg-theme-button-text-color, #fff);
       border: none;
-      border-radius: 10px;
+      border-radius: 12px;
       cursor: pointer;
     }
 
-    #error {
-      color: red;
-      font-size: 14px;
+    /* ── СТИЛИ ДЛЯ ПЕЧАТИ ── */
+    @page {
+      /* Убираем поля и колонтитулы */
+      margin: 0;
+      size: auto;
     }
 
     @media print {
-      #print-btn, #label { display: none; }
-      body { justify-content: center; padding: 0; gap: 0; }
-      #code { width: 100%; height: 100%; }
-      #code img, #code canvas, #code svg {
-        max-width: 100%;
-        max-height: 100%;
+      .type-bar,
+      .print-btn { display: none !important; }
+
+      body {
+        display: block;
+        padding: 0;
+      }
+
+      .code-area {
+        width: 100vw;
+        height: 100vh;
+        padding: 12px;
+        justify-content: center;
+        gap: 10px;
+      }
+
+      #code-container {
+        width: 100%;
+        justify-content: center;
+      }
+      #code-container img,
+      #code-container canvas {
+        max-width: 85vw;
+        max-height: 72vh;
+        width: auto;
+        height: auto;
+      }
+      #code-container svg {
+        max-width: 92vw;
+        height: auto;
+      }
+
+      .serial-text {
+        font-size: 20px;
       }
     }
   </style>
 </head>
 <body>
-  <div id="code"></div>
-  <p id="label"></p>
-  <p id="error"></p>
-  <button id="print-btn" onclick="window.print()">Печать</button>
+
+  <div class="type-bar">
+    <button class="type-btn" id="btn-qr"      onclick="setType('qr')">QR код</button>
+    <button class="type-btn" id="btn-barcode" onclick="setType('barcode')">Штрих-код</button>
+  </div>
+
+  <div class="code-area">
+    <div id="code-container"></div>
+    <div class="serial-text" id="serial-label"></div>
+  </div>
+
+  <button class="print-btn" onclick="window.print()">Печать</button>
 
   <script>
     const tg = window.Telegram.WebApp;
     tg.ready();
     tg.expand();
 
-    const params = new URLSearchParams(window.location.search);
-    const type = params.get('type') || 'qr';
-    const data = params.get('data') || '';
+    const params  = new URLSearchParams(window.location.search);
+    const serial  = params.get('data') || '';
+    let   curType = localStorage.getItem('code_type') || params.get('type') || 'qr';
 
-    if (!data) {
-      document.getElementById('error').textContent = 'Нет данных для отображения.';
-      document.getElementById('print-btn').style.display = 'none';
-    } else {
-      document.getElementById('label').textContent = data;
+    document.getElementById('serial-label').textContent = serial;
 
-      const container = document.getElementById('code');
+    /* Переключить тип и перерисовать */
+    function setType(type) {
+      curType = type;
+      localStorage.setItem('code_type', type);
+      updateButtons();
+      renderCode();
+    }
 
-      if (type === 'qr') {
-        const sz = Math.min(280, window.innerWidth * 0.8, window.innerHeight * 0.7);
+    function updateButtons() {
+      document.getElementById('btn-qr').classList.toggle('active', curType === 'qr');
+      document.getElementById('btn-barcode').classList.toggle('active', curType === 'barcode');
+    }
+
+    function renderCode() {
+      const container = document.getElementById('code-container');
+      container.innerHTML = '';
+
+      if (!serial) {
+        container.textContent = 'Нет данных';
+        return;
+      }
+
+      if (curType === 'qr') {
+        const sz = Math.round(Math.min(280, window.innerWidth * 0.8, window.innerHeight * 0.65));
         new QRCode(container, {
-          text: data,
+          text: serial,
           width: sz,
           height: sz,
-          correctLevel: QRCode.CorrectLevel.M
+          correctLevel: QRCode.CorrectLevel.M,
         });
       } else {
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         container.appendChild(svg);
         try {
-          JsBarcode(svg, data, {
+          JsBarcode(svg, serial, {
             format: 'CODE128',
             displayValue: false,
-            margin: 10
+            margin: 8,
           });
         } catch (e) {
-          document.getElementById('error').textContent = 'Ошибка генерации штрих-кода: ' + e.message;
+          container.textContent = 'Ошибка: ' + e.message;
         }
       }
     }
+
+    updateButtons();
+    renderCode();
   </script>
 </body>
 </html>

@@ -7,6 +7,12 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+
+  <!-- Этот тег перезаписывается JS перед печатью -->
+  <style id="page-size-style">
+    @page { size: 100mm 100mm; margin: 0; }
+  </style>
+
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -19,76 +25,81 @@
       align-items: center;
     }
 
-    /* ── Переключатель типа ── */
-    .type-bar {
+    /* ── Панель настроек ── */
+    .toolbar {
+      width: 100%;
+      background: var(--tg-theme-bg-color, #fff);
+      border-bottom: 1px solid #e5e5e5;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .btn-row {
       display: flex;
       gap: 8px;
-      padding: 12px 16px;
-      width: 100%;
-      border-bottom: 1px solid #e5e5e5;
       justify-content: center;
-      background: var(--tg-theme-bg-color, #fff);
     }
-    .type-btn {
-      padding: 8px 24px;
-      border-radius: 20px;
+    .seg-btn {
+      flex: 1;
+      max-width: 160px;
+      padding: 7px 0;
+      border-radius: 18px;
       border: 2px solid var(--tg-theme-button-color, #2481cc);
       background: transparent;
       color: var(--tg-theme-button-color, #2481cc);
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 600;
       cursor: pointer;
-      transition: background .15s, color .15s;
+      transition: background .12s, color .12s;
     }
-    .type-btn.active {
+    .seg-btn.active {
       background: var(--tg-theme-button-color, #2481cc);
       color: var(--tg-theme-button-text-color, #fff);
     }
 
-    /* ── Область кода ── */
+    /* ── Превью кода ── */
     .code-area {
       flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 20px 16px 12px;
-      gap: 16px;
+      padding: 16px;
+      gap: 12px;
       width: 100%;
     }
-
-    #code-container {
+    #code-wrap {
       display: flex;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
     }
-    #code-container img,
-    #code-container canvas {
-      max-width: min(80vw, 68vh);
-      max-height: min(80vw, 68vh);
+    #code-wrap img,
+    #code-wrap canvas {
+      max-width: min(75vw, 60vh);
+      max-height: min(75vw, 60vh);
     }
-    #code-container svg {
-      max-width: 92vw;
+    #code-wrap svg {
+      max-width: 88vw;
       height: auto;
     }
-
     .serial-text {
       font-family: 'Courier New', Courier, monospace;
-      font-size: clamp(14px, 3.5vw, 22px);
+      font-size: clamp(13px, 3.2vw, 20px);
       font-weight: 700;
       text-align: center;
       letter-spacing: 0.04em;
-      color: #000;
       word-break: break-all;
-      line-height: 1.45;
+      line-height: 1.4;
+      color: #000;
     }
 
     /* ── Кнопка печати ── */
     .print-btn {
       width: calc(100% - 32px);
-      max-width: 420px;
-      padding: 14px;
-      margin: 0 16px 20px;
+      max-width: 400px;
+      padding: 13px;
+      margin: 0 16px 18px;
       font-size: 16px;
       font-weight: 700;
       background: var(--tg-theme-button-color, #2481cc);
@@ -98,122 +109,157 @@
       cursor: pointer;
     }
 
-    /* ── СТИЛИ ДЛЯ ПЕЧАТИ ── */
-    @page {
-      /* Убираем поля и колонтитулы */
-      margin: 0;
-      size: auto;
-    }
-
+    /* ═══════════════════════════
+       СТИЛИ ПЕЧАТИ
+       Toolbar и кнопка скрываются.
+       Контент заполняет страницу.
+    ═══════════════════════════ */
     @media print {
-      .type-bar,
+      .toolbar,
       .print-btn { display: none !important; }
 
-      body {
-        display: block;
-        padding: 0;
+      html, body {
+        /* Точный размер задаётся JS-ом через CSS-переменные */
+        width:  var(--pw, 100mm);
+        height: var(--ph, 100mm);
+        overflow: hidden;
       }
 
       .code-area {
-        width: 100vw;
-        height: 100vh;
-        padding: 12px;
+        width:  var(--pw, 100mm);
+        height: var(--ph, 100mm);
+        padding: 3mm;
+        gap: 2mm;
         justify-content: center;
-        gap: 10px;
       }
 
-      #code-container {
+      #code-wrap {
+        flex: 1;
         width: 100%;
+        align-items: center;
         justify-content: center;
+        overflow: hidden;
       }
-      #code-container img,
-      #code-container canvas {
-        max-width: 85vw;
-        max-height: 72vh;
+
+      /* Изображение/канвас занимает всю доступную ширину */
+      #code-wrap img,
+      #code-wrap canvas {
+        max-width:  100%;
+        max-height: 100%;
         width: auto;
         height: auto;
       }
-      #code-container svg {
-        max-width: 92vw;
+      #code-wrap svg {
+        width:  100%;
         height: auto;
       }
 
       .serial-text {
-        font-size: 20px;
+        font-size: 10pt;
+        width: 100%;
       }
     }
   </style>
 </head>
 <body>
 
-  <div class="type-bar">
-    <button class="type-btn" id="btn-qr"      onclick="setType('qr')">QR код</button>
-    <button class="type-btn" id="btn-barcode" onclick="setType('barcode')">Штрих-код</button>
+  <div class="toolbar">
+    <!-- Тип кода -->
+    <div class="btn-row">
+      <button class="seg-btn" id="btn-qr"      onclick="setType('qr')">QR код</button>
+      <button class="seg-btn" id="btn-barcode" onclick="setType('barcode')">Штрих-код</button>
+    </div>
+    <!-- Размер печати -->
+    <div class="btn-row">
+      <button class="seg-btn" id="btn-100" onclick="setSize('100x100')">100×100 мм</button>
+      <button class="seg-btn" id="btn-50"  onclick="setSize('50x40')">50×40 мм</button>
+    </div>
   </div>
 
   <div class="code-area">
-    <div id="code-container"></div>
-    <div class="serial-text" id="serial-label"></div>
+    <div id="code-wrap"></div>
+    <div class="serial-text" id="serial-lbl"></div>
   </div>
 
-  <button class="print-btn" onclick="window.print()">Печать</button>
+  <button class="print-btn" onclick="doPrint()">Печать</button>
 
   <script>
     const tg = window.Telegram.WebApp;
     tg.ready();
     tg.expand();
 
-    const params  = new URLSearchParams(window.location.search);
-    const serial  = params.get('data') || '';
-    let   curType = localStorage.getItem('code_type') || params.get('type') || 'qr';
+    const params = new URLSearchParams(window.location.search);
+    const serial = params.get('data') || '';
 
-    document.getElementById('serial-label').textContent = serial;
+    let curType = localStorage.getItem('code_type') || params.get('type') || 'qr';
+    let curSize = localStorage.getItem('print_size') || '100x100';
 
-    /* Переключить тип и перерисовать */
-    function setType(type) {
-      curType = type;
-      localStorage.setItem('code_type', type);
+    document.getElementById('serial-lbl').textContent = serial;
+
+    /* ── Размеры (мм) ── */
+    const SIZES = { '100x100': [100, 100], '50x40': [50, 40] };
+
+    /* ── Обновить @page и CSS-переменные ── */
+    function applyPageSize() {
+      const [w, h] = SIZES[curSize] || [100, 100];
+      document.getElementById('page-size-style').textContent =
+        `@page { size: ${w}mm ${h}mm; margin: 0; }`;
+      document.documentElement.style.setProperty('--pw', w + 'mm');
+      document.documentElement.style.setProperty('--ph', h + 'mm');
+    }
+
+    /* ── Переключатели ── */
+    function setType(t) {
+      curType = t;
+      localStorage.setItem('code_type', t);
       updateButtons();
       renderCode();
     }
 
-    function updateButtons() {
-      document.getElementById('btn-qr').classList.toggle('active', curType === 'qr');
-      document.getElementById('btn-barcode').classList.toggle('active', curType === 'barcode');
+    function setSize(s) {
+      curSize = s;
+      localStorage.setItem('print_size', s);
+      updateButtons();
+      applyPageSize();
     }
 
-    function renderCode() {
-      const container = document.getElementById('code-container');
-      container.innerHTML = '';
+    function updateButtons() {
+      document.getElementById('btn-qr').classList.toggle('active',      curType === 'qr');
+      document.getElementById('btn-barcode').classList.toggle('active', curType === 'barcode');
+      document.getElementById('btn-100').classList.toggle('active', curSize === '100x100');
+      document.getElementById('btn-50').classList.toggle('active',  curSize === '50x40');
+    }
 
-      if (!serial) {
-        container.textContent = 'Нет данных';
-        return;
-      }
+    /* ── Генерация кода ── */
+    function renderCode() {
+      const wrap = document.getElementById('code-wrap');
+      wrap.innerHTML = '';
+      if (!serial) { wrap.textContent = 'Нет данных'; return; }
 
       if (curType === 'qr') {
-        const sz = Math.round(Math.min(280, window.innerWidth * 0.8, window.innerHeight * 0.65));
-        new QRCode(container, {
-          text: serial,
-          width: sz,
-          height: sz,
-          correctLevel: QRCode.CorrectLevel.M,
-        });
+        const sz = Math.round(Math.min(240, window.innerWidth * 0.75, window.innerHeight * 0.58));
+        new QRCode(wrap, { text: serial, width: sz, height: sz,
+                           correctLevel: QRCode.CorrectLevel.M });
       } else {
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        container.appendChild(svg);
+        wrap.appendChild(svg);
         try {
-          JsBarcode(svg, serial, {
-            format: 'CODE128',
-            displayValue: false,
-            margin: 8,
-          });
+          JsBarcode(svg, serial, { format: 'CODE128', displayValue: false, margin: 6 });
         } catch (e) {
-          container.textContent = 'Ошибка: ' + e.message;
+          wrap.textContent = 'Ошибка: ' + e.message;
         }
       }
     }
 
+    /* ── Печать ── */
+    function doPrint() {
+      applyPageSize();
+      // Небольшая задержка, чтобы браузер успел применить @page
+      setTimeout(() => window.print(), 80);
+    }
+
+    /* ── Инит ── */
+    applyPageSize();
     updateButtons();
     renderCode();
   </script>

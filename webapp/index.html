@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Печать кода</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: #fff;
+      font-family: sans-serif;
+      gap: 20px;
+      padding: 24px;
+    }
+
+    #code {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #code img, #code canvas {
+      max-width: min(80vw, 80vh);
+      max-height: min(80vw, 80vh);
+    }
+    #code svg {
+      max-width: 90vw;
+      height: auto;
+    }
+
+    #label {
+      font-size: 14px;
+      color: #666;
+      letter-spacing: 0.05em;
+    }
+
+    #print-btn {
+      padding: 13px 36px;
+      font-size: 16px;
+      font-weight: 600;
+      background: var(--tg-theme-button-color, #2481cc);
+      color: var(--tg-theme-button-text-color, #fff);
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    #error {
+      color: red;
+      font-size: 14px;
+    }
+
+    @media print {
+      #print-btn, #label { display: none; }
+      body { justify-content: center; padding: 0; gap: 0; }
+      #code { width: 100%; height: 100%; }
+      #code img, #code canvas, #code svg {
+        max-width: 100%;
+        max-height: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="code"></div>
+  <p id="label"></p>
+  <p id="error"></p>
+  <button id="print-btn" onclick="window.print()">Печать</button>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+
+    const params = new URLSearchParams(window.location.search);
+    const type = params.get('type') || 'qr';
+    const data = params.get('data') || '';
+
+    if (!data) {
+      document.getElementById('error').textContent = 'Нет данных для отображения.';
+      document.getElementById('print-btn').style.display = 'none';
+    } else {
+      document.getElementById('label').textContent = data;
+
+      const container = document.getElementById('code');
+
+      if (type === 'qr') {
+        const sz = Math.min(280, window.innerWidth * 0.8, window.innerHeight * 0.7);
+        new QRCode(container, {
+          text: data,
+          width: sz,
+          height: sz,
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } else {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        container.appendChild(svg);
+        try {
+          JsBarcode(svg, data, {
+            format: 'CODE128',
+            displayValue: false,
+            margin: 10
+          });
+        } catch (e) {
+          document.getElementById('error').textContent = 'Ошибка генерации штрих-кода: ' + e.message;
+        }
+      }
+    }
+  </script>
+</body>
+</html>

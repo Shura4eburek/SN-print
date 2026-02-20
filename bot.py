@@ -1,5 +1,6 @@
 import asyncio
 import os
+import re
 import logging
 from dotenv import load_dotenv
 from urllib.parse import urlencode
@@ -35,8 +36,13 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
 
+def clean_serial(text: str) -> str:
+    """Убрать служебные символы, которые добавляют некоторые сканеры (напр. '[')."""
+    return re.sub(r'^[^\w\-]+', '', text.strip())
+
+
 async def handle_serial(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    serial = update.message.text.strip()
+    serial = clean_serial(update.message.text)
 
     # Сохраняем серийник для callback
     context.user_data["serial"] = serial

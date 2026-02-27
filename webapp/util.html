@@ -5,95 +5,112 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Утіль</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-  <!-- Перезаписывается JS перед печатью -->
   <style id="page-size-style">
     @page { size: 100mm 100mm; margin: 0; }
   </style>
-
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: sans-serif;
-      background: #fff;
+      background: #f2f2f7;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
     }
 
-    /* ── Форма (тільки на екрані) ── */
+    /* ── Форма ── */
     .form-section {
-      padding: 16px;
+      padding: 14px 16px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
+      background: #fff;
       border-bottom: 1px solid #e5e5e5;
     }
-
     .field label {
       display: block;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 600;
-      color: #555;
-      margin-bottom: 5px;
+      color: #888;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
     .field input[type="text"] {
       width: 100%;
-      padding: 9px 12px;
+      padding: 8px 11px;
       font-size: 15px;
-      border: 1.5px solid #ccc;
+      border: 1.5px solid #ddd;
       border-radius: 8px;
       outline: none;
-      color: #000;
     }
     .field input[type="text"]:focus {
       border-color: var(--tg-theme-button-color, #2481cc);
     }
-
-    .checklist-title {
-      font-size: 13px;
+    .checklist-label {
+      font-size: 12px;
       font-weight: 600;
-      color: #555;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
       margin-bottom: 6px;
     }
-    .checklist {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
+    .checklist { display: flex; flex-direction: column; gap: 2px; }
     .check-item {
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 6px 8px;
-      border-radius: 7px;
+      padding: 5px 4px;
       cursor: pointer;
       user-select: none;
+      border-radius: 6px;
     }
     .check-item:active { background: #f0f0f0; }
     .check-item input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
+      width: 17px; height: 17px;
       cursor: pointer;
       accent-color: var(--tg-theme-button-color, #2481cc);
       flex-shrink: 0;
     }
-    .check-item span {
-      font-size: 15px;
-      color: #000;
-    }
+    .check-item span { font-size: 14px; }
     .check-item.unchecked span {
       text-decoration: line-through;
-      color: #999;
+      color: #aaa;
     }
 
-    /* ── Кнопка печати ── */
+    /* ── Превью наклейки (всегда в DOM) ── */
+    .preview-wrap {
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .preview-title-bar {
+      font-size: 11px;
+      font-weight: 600;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .print-area {
+      background: #fff;
+      border: 1.5px dashed #bbb;
+      border-radius: 6px;
+      padding: 3mm;
+      font-family: Arial, sans-serif;
+      /* фиксированный размер как реальная наклейка */
+      width: 100mm;
+      min-height: 100mm;
+      align-self: center;
+    }
+
+    /* ── Кнопка ── */
     .print-btn {
       width: calc(100% - 32px);
       max-width: 400px;
       padding: 13px;
-      margin: 12px 16px 18px;
+      margin: 4px 16px 18px;
       font-size: 16px;
       font-weight: 700;
       background: var(--tg-theme-button-color, #2481cc);
@@ -104,33 +121,7 @@
       align-self: center;
     }
 
-    /* Область печати скрыта на экране */
-    @media screen {
-      .print-area { display: none; }
-    }
-
-    /* ═══════════════════════════════
-       СТИЛЬ ПЕЧАТИ — 100×100 мм, без полей
-    ═══════════════════════════════ */
-    @media print {
-      .form-section,
-      .print-btn { display: none !important; }
-
-      html, body {
-        margin: 0;
-        padding: 0;
-        width: 100mm;
-        height: 100mm;
-        overflow: hidden;
-      }
-
-      .print-area {
-        display: block;
-        padding: 3mm;
-        font-family: Arial, sans-serif;
-      }
-    }
-
+    /* ── Содержимое наклейки ── */
     .print-title {
       text-align: center;
       font-size: 12pt;
@@ -156,37 +147,66 @@
     .print-kit-list li {
       font-size: 9pt;
       font-weight: bold;
-      line-height: 1.15;
+      line-height: 1.2;
     }
-    .print-kit-list li::before {
-      content: "- ";
-    }
+    .print-kit-list li::before { content: "- "; }
     .print-kit-list li.missing {
       text-decoration: line-through;
       font-weight: normal;
-      color: #555;
+      color: #888;
+    }
+
+    /* ══════════════════════════════
+       ПЕЧАТЬ
+    ══════════════════════════════ */
+    @media print {
+      html, body {
+        margin: 0; padding: 0;
+        background: #fff;
+        width: 100mm;
+        height: 100mm;
+        overflow: hidden;
+      }
+      .form-section,
+      .preview-title-bar,
+      .print-btn { display: none !important; }
+
+      .preview-wrap {
+        padding: 0;
+      }
+      .print-area {
+        border: none;
+        border-radius: 0;
+        width: 100mm;
+        min-height: 0;
+        padding: 3mm;
+      }
     }
   </style>
 </head>
 <body>
 
-  <!-- ── Форма ── -->
+  <!-- Форма -->
   <div class="form-section">
     <div class="field">
       <label>Причина</label>
-      <input type="text" id="reason" placeholder="Введіть причину утилізації..." oninput="updatePreview()">
+      <input type="text" id="reason" placeholder="Введіть причину..." oninput="updatePreview()">
     </div>
-
     <div>
-      <div class="checklist-title">Комплектація</div>
+      <div class="checklist-label">Комплектація</div>
       <div class="checklist" id="checklist"></div>
     </div>
   </div>
 
-  <button class="print-btn" onclick="doPrint()">Друк</button>
+  <!-- Превью + кнопка -->
+  <div class="preview-wrap">
+    <div class="preview-title-bar">Попередній перегляд</div>
 
-  <!-- ── Область печати (генерируется JS) ── -->
-  <div class="print-area" id="print-area"></div>
+    <!-- Эта область ВСЕГДА в DOM — гарантированно печатается -->
+    <div class="print-area" id="print-area"></div>
+
+    <button class="print-btn" onclick="doPrint()">Друк</button>
+  </div>
 
   <script>
     const tg = window.Telegram.WebApp;
@@ -194,78 +214,56 @@
     tg.expand();
 
     const ITEMS = [
-      'Пінопласт',
-      'Пакет',
-      'Кришка',
-      'Скло',
-      'Морда',
-      'Вентилятори',
-      'Пильові фільтри',
-      'USB інтерфейси',
-      'Кнопка живлення',
+      'Пінопласт','Пакет','Кришка','Скло','Морда',
+      'Вентилятори','Пильові фільтри','USB інтерфейси','Кнопка живлення',
     ];
 
-    // Восстановить состояние чекбоксов из localStorage
     const saved = JSON.parse(localStorage.getItem('util_checks') || 'null');
-
-    // Отрисовать чекбоксы
     const checklist = document.getElementById('checklist');
+
     ITEMS.forEach((item, i) => {
-      const checked = saved ? saved[i] : true;
+      const checked = saved ? !!saved[i] : true;
       const row = document.createElement('label');
       row.className = 'check-item' + (checked ? '' : ' unchecked');
       row.innerHTML = `
-        <input type="checkbox" ${checked ? 'checked' : ''} onchange="onCheck(this, ${i})">
-        <span>${item}</span>
-      `;
+        <input type="checkbox" ${checked ? 'checked' : ''} onchange="onCheck(this)">
+        <span>${item}</span>`;
       checklist.appendChild(row);
     });
 
-    function onCheck(el, idx) {
-      const row = el.closest('.check-item');
-      row.classList.toggle('unchecked', !el.checked);
+    function onCheck(el) {
+      el.closest('.check-item').classList.toggle('unchecked', !el.checked);
       saveChecks();
+      updatePreview();
     }
 
     function saveChecks() {
-      const states = [...checklist.querySelectorAll('input[type=checkbox]')].map(c => c.checked);
+      const states = [...checklist.querySelectorAll('input')].map(c => c.checked);
       localStorage.setItem('util_checks', JSON.stringify(states));
-    }
-
-    function getChecks() {
-      return [...checklist.querySelectorAll('input[type=checkbox]')].map(c => c.checked);
     }
 
     function updatePreview() {
       const reason = document.getElementById('reason').value.trim() || '—';
-      const checks = getChecks();
-
-      const items = ITEMS.map((item, i) =>
-        `<li class="${checks[i] ? '' : 'missing'}">${item}</li>`
-      ).join('');
+      const checks = [...checklist.querySelectorAll('input')].map(c => c.checked);
+      const items  = ITEMS.map((it, i) =>
+        `<li class="${checks[i] ? '' : 'missing'}">${it}</li>`).join('');
 
       document.getElementById('print-area').innerHTML = `
         <div class="print-title">Утіль</div>
         <div class="print-reason">Причина: ${reason}</div>
         <div class="print-kit-title">Доступна комплектація</div>
-        <ul class="print-kit-list">${items}</ul>
-      `;
+        <ul class="print-kit-list">${items}</ul>`;
     }
 
-    function applyPageSize() {
+    function doPrint() {
+      // Обновляем @page перед печатью
       document.getElementById('page-size-style').textContent =
         '@page { size: 100mm 100mm; margin: 0; }';
       document.documentElement.style.setProperty('--pw', '100mm');
       document.documentElement.style.setProperty('--ph', '100mm');
-    }
-
-    function doPrint() {
-      updatePreview();
-      applyPageSize();
       setTimeout(() => window.print(), 80);
     }
 
-    // Начальный рендер
     updatePreview();
   </script>
 </body>

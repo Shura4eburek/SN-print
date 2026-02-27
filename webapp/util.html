@@ -99,17 +99,26 @@
     }
 
     /* ═══════════════════════════════
-       СТИЛЬ ПЕЧАТИ
+       СТИЛЬ ПЕЧАТИ — 100×100 мм, без полей
     ═══════════════════════════════ */
-    @page { size: auto; margin: 12mm 15mm; }
+    @page { size: 100mm 100mm; margin: 0; }
 
     @media print {
       .form-section,
       .print-btn { display: none !important; }
 
+      html, body {
+        width: 100mm;
+        height: 100mm;
+        overflow: hidden;
+      }
+
       .print-area {
         display: block !important;
-        padding: 0;
+        width: 100mm;
+        height: 100mm;
+        padding: 4mm;
+        overflow: hidden;
       }
     }
 
@@ -121,30 +130,30 @@
 
     .print-title {
       text-align: center;
-      font-size: 22pt;
+      font-size: 12pt;
       font-weight: bold;
       text-decoration: underline;
-      margin-bottom: 14pt;
+      margin-bottom: 3mm;
     }
     .print-reason {
-      font-size: 14pt;
+      font-size: 8pt;
       font-weight: bold;
-      margin-bottom: 18pt;
+      margin-bottom: 3mm;
     }
     .print-kit-title {
       text-align: center;
-      font-size: 14pt;
+      font-size: 8pt;
       font-weight: bold;
-      margin-bottom: 10pt;
+      margin-bottom: 2mm;
     }
     .print-kit-list {
       list-style: none;
       padding: 0;
     }
     .print-kit-list li {
-      font-size: 13pt;
+      font-size: 7pt;
       font-weight: bold;
-      line-height: 1.7;
+      line-height: 1.5;
     }
     .print-kit-list li::before {
       content: "- ";

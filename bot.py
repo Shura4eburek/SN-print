@@ -4,7 +4,12 @@ import re
 import logging
 from dotenv import load_dotenv
 from urllib.parse import urlencode
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
+from telegram import (
+    Update,
+    InlineKeyboardButton, InlineKeyboardMarkup,
+    KeyboardButton, ReplyKeyboardMarkup,
+    WebAppInfo,
+)
 from telegram.ext import (
     Application,
     CallbackQueryHandler,
@@ -28,11 +33,24 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+def make_reply_keyboard() -> ReplyKeyboardMarkup | None:
+    """Постоянная кнопка над полем ввода для открытия формы утиля."""
+    if not WEBAPP_URL:
+        return None
+    util_url = f"{WEBAPP_URL.rstrip('/')}/util.html"
+    return ReplyKeyboardMarkup(
+        [[KeyboardButton("🗑 Створити утиль", web_app=WebAppInfo(url=util_url))]],
+        resize_keyboard=True,
+    )
+
+
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
         "Привет! Отправь серийный номер — появятся кнопки:\n"
         "• В чат — получишь QR и штрихкод файлами\n"
-        "• На печать — откроется Mini App"
+        "• На печать — откроется Mini App\n\n"
+        "Кнопка «Створити утиль» — внизу, над полем ввода.",
+        reply_markup=make_reply_keyboard(),
     )
 
 
@@ -57,12 +75,6 @@ async def handle_serial(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
                 web_app=WebAppInfo(url=f"{base}/index.html?{qs}"),
             )
         )
-        buttons.append([
-            InlineKeyboardButton(
-                "🗑 Створити утиль",
-                web_app=WebAppInfo(url=f"{base}/util.html"),
-            )
-        ])
 
     await update.message.reply_text(
         serial,

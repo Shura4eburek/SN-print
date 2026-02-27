@@ -108,17 +108,18 @@
        СТИЛЬ ПЕЧАТИ — 100×100 мм, без полей
     ═══════════════════════════════ */
     @media print {
-      .form-section,
-      .print-btn { display: none !important; }
+      /* Скрываем всё через visibility — надёжнее чем display:none */
+      body * { visibility: hidden; }
 
-      html, body {
-        width: var(--pw, 100mm);
-        height: var(--ph, 100mm);
-        overflow: hidden;
-      }
+      /* Показываем только область печати */
+      .print-area,
+      .print-area * { visibility: visible; }
 
+      /* Фиксируем в левом верхнем углу страницы — гарантированно 1 страница */
       .print-area {
-        display: block !important;
+        position: fixed;
+        top: 0;
+        left: 0;
         width: var(--pw, 100mm);
         height: var(--ph, 100mm);
         padding: 3mm;

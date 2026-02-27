@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Утіль</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!-- Перезаписывается JS перед печатью -->
+  <style id="page-size-style">
+    @page { size: 100mm 100mm; margin: 0; }
+  </style>
+
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -101,22 +107,20 @@
     /* ═══════════════════════════════
        СТИЛЬ ПЕЧАТИ — 100×100 мм, без полей
     ═══════════════════════════════ */
-    @page { size: 100mm 100mm; margin: 0; }
-
     @media print {
       .form-section,
       .print-btn { display: none !important; }
 
       html, body {
-        width: 100mm;
-        height: 100mm;
+        width: var(--pw, 100mm);
+        height: var(--ph, 100mm);
         overflow: hidden;
       }
 
       .print-area {
         display: block !important;
-        width: 100mm;
-        height: 100mm;
+        width: var(--pw, 100mm);
+        height: var(--ph, 100mm);
         padding: 4mm;
         overflow: hidden;
       }
@@ -249,9 +253,17 @@
       `;
     }
 
+    function applyPageSize() {
+      document.getElementById('page-size-style').textContent =
+        '@page { size: 100mm 100mm; margin: 0; }';
+      document.documentElement.style.setProperty('--pw', '100mm');
+      document.documentElement.style.setProperty('--ph', '100mm');
+    }
+
     function doPrint() {
       updatePreview();
-      setTimeout(() => window.print(), 60);
+      applyPageSize();
+      setTimeout(() => window.print(), 80);
     }
 
     // Начальный рендер

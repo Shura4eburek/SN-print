@@ -49,13 +49,20 @@ async def handle_serial(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
     buttons = [[InlineKeyboardButton("📎 В чат", callback_data="send_to_chat")]]
     if WEBAPP_URL:
+        base = WEBAPP_URL.rstrip("/")
         qs = urlencode({"data": serial})
         buttons[0].append(
             InlineKeyboardButton(
                 "🖨 На печать",
-                web_app=WebAppInfo(url=f"{WEBAPP_URL}?{qs}"),
+                web_app=WebAppInfo(url=f"{base}/index.html?{qs}"),
             )
         )
+        buttons.append([
+            InlineKeyboardButton(
+                "🗑 Створити утиль",
+                web_app=WebAppInfo(url=f"{base}/util.html"),
+            )
+        ])
 
     await update.message.reply_text(
         serial,

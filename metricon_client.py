@@ -93,6 +93,13 @@ class MetriconClient:
         self._heartbeat_thread: Optional[threading.Thread] = None
         self._flush_thread: Optional[threading.Thread] = None
         self._process = _psutil.Process() if _psutil else None
+        self._start_time = time.time()
+        # Prime cpu_percent so the first real reading isn't always 0.0
+        if self._process:
+            try:
+                self._process.cpu_percent(interval=None)
+            except Exception:
+                pass
 
     # ------------------------------------------------------------------
     # Lifecycle
@@ -288,13 +295,13 @@ class MetriconClient:
 
         if _psutil and self._process:
             try:
-                cpu = _psutil.cpu_percent(interval=None)
+                cpu = self._process.cpu_percent(interval=None)  # process-only CPU
                 memory_mb = self._process.memory_info().rss / (1024 * 1024)
                 connections = len(self._process.net_connections())
             except Exception:
                 pass
 
-        uptime = int(time.time() - (_psutil.boot_time() if _psutil else time.time()))
+        uptime = int(time.time() - self._start_time)  # bot uptime, not system uptime
 
         payload = {
             "uptime_seconds": uptime,

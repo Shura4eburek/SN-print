@@ -18,7 +18,8 @@
 
     body {
       min-height: 100vh;
-      background: #fff;
+      background: var(--tg-theme-bg-color, #fff);
+      color: var(--tg-theme-text-color, #000);
       font-family: sans-serif;
       display: flex;
       flex-direction: column;
@@ -45,17 +46,22 @@
       max-width: 160px;
       padding: 7px 0;
       border-radius: 18px;
-      border: 2px solid var(--tg-theme-button-color, #2481cc);
+      border: 2px solid var(--tg-theme-hint-color, #aaa);
       background: transparent;
-      color: var(--tg-theme-button-color, #2481cc);
+      color: var(--tg-theme-text-color, #333);
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
-      transition: background .12s, color .12s;
+      transition: background .12s, color .12s, border-color .12s;
     }
     .seg-btn.active {
       background: var(--tg-theme-button-color, #2481cc);
       color: var(--tg-theme-button-text-color, #fff);
+      border-color: var(--tg-theme-button-color, #2481cc);
+    }
+    .seg-btn:disabled {
+      opacity: 0.35;
+      cursor: default;
     }
 
     /* ── Превью кода ── */
@@ -91,7 +97,14 @@
       letter-spacing: 0.04em;
       word-break: break-all;
       line-height: 1.4;
-      color: #000;
+      color: var(--tg-theme-text-color, #000);
+    }
+    .code-hint {
+      text-align: center;
+      color: var(--tg-theme-hint-color, #888);
+      font-size: 13px;
+      line-height: 1.5;
+      padding: 12px 16px;
     }
 
     /* ── Кнопка печати ── */
@@ -191,10 +204,22 @@
     const params = new URLSearchParams(window.location.search);
     const serial = params.get('data') || '';
 
+    // Code128 підтримує лише ASCII — для кирилиці примусово QR
+    const hasNonAscii = serial && /[^\x00-\x7F]/.test(serial);
+
     let curType = localStorage.getItem('code_type') || params.get('type') || 'qr';
+    if (hasNonAscii && curType === 'barcode') curType = 'qr';
+
     let curSize = localStorage.getItem('print_size') || '100x100';
 
     document.getElementById('serial-lbl').textContent = serial;
+
+    // Заблокувати кнопку штрих-коду якщо є не-ASCII символи
+    if (hasNonAscii) {
+      const btn = document.getElementById('btn-barcode');
+      btn.disabled = true;
+      btn.title = 'Штрих-код підтримує лише латинські символи';
+    }
 
     /* ── Размеры (мм) ── */
     const SIZES = { '100x100': [100, 100], '50x40': [50, 40] };
@@ -234,7 +259,10 @@
     function renderCode() {
       const wrap = document.getElementById('code-wrap');
       wrap.innerHTML = '';
-      if (!serial) { wrap.textContent = 'Нет данных'; return; }
+      if (!serial) {
+        wrap.innerHTML = '<div class="code-hint">Немає даних для відображення</div>';
+        return;
+      }
 
       if (curType === 'qr') {
         const sz = Math.round(Math.min(240, window.innerWidth * 0.75, window.innerHeight * 0.58));
@@ -246,7 +274,9 @@
         try {
           JsBarcode(svg, serial, { format: 'CODE128', displayValue: false, margin: 6 });
         } catch (e) {
-          wrap.textContent = 'Ошибка: ' + e.message;
+          wrap.innerHTML = hasNonAscii
+            ? '<div class="code-hint">Штрих-код не підтримує<br>кириличні символи.<br>Використовуйте QR-код.</div>'
+            : '<div class="code-hint">Помилка генерації: ' + (e.message || String(e)) + '</div>';
         }
       }
     }

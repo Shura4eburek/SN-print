@@ -51,7 +51,7 @@ def make_reply_keyboard() -> ReplyKeyboardMarkup | None:
         return None
     util_url = f"{WEBAPP_URL.rstrip('/')}/util.html"
     return ReplyKeyboardMarkup(
-        [[KeyboardButton("🗑 Створити утиль", web_app=WebAppInfo(url=util_url))]],
+        [[KeyboardButton("🖨 Друк інших наклейок", web_app=WebAppInfo(url=util_url))]],
         resize_keyboard=True,
     )
 
@@ -63,7 +63,7 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             "Привет! Отправь серийный номер — появятся кнопки:\n"
             "• В чат — получишь QR и штрихкод файлами\n"
             "• На печать — откроется Mini App\n\n"
-            "Кнопка «Створити утиль» — внизу, над полем ввода.",
+            "Кнопка «Друк інших наклейок» — внизу, над полем ввода.",
             reply_markup=make_reply_keyboard(),
         )
         if metricon:

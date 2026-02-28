@@ -30,6 +30,8 @@ Usage:
 
     client.stop()
 """
+VERSION = "1.1.0"
+
 from __future__ import annotations
 
 import asyncio
@@ -207,7 +209,7 @@ class MetriconClient:
             "command": command,
         }
         threading.Thread(
-            target=self._post, args=("/api/v1/metrics/error/", payload),
+            target=self._post_json, args=("/api/v1/metrics/error/", payload),
             name="metricon-error", daemon=True
         ).start()
 
@@ -215,7 +217,7 @@ class MetriconClient:
         """Fire-and-forget custom metric."""
         payload = {"key": key, "value": float(value)}
         threading.Thread(
-            target=self._post, args=("/api/v1/metrics/custom/", payload),
+            target=self._post_json, args=("/api/v1/metrics/custom/", payload),
             name="metricon-custom", daemon=True
         ).start()
 
@@ -258,16 +260,18 @@ class MetriconClient:
     def _headers(self) -> dict:
         return {"X-API-Key": self.api_key, "Content-Type": "application/json"}
 
-    def _post(self, path: str, payload: Any) -> None:
+    def _post_json(self, path: str, payload: Any) -> Optional[dict]:
         try:
-            _requests.post(
+            resp = _requests.post(
                 self.server_url + path,
                 json=payload,
                 headers=self._headers(),
                 timeout=self.timeout,
             )
+            return resp.json() if resp.ok else None
         except Exception as exc:
             log.debug("Metricon POST %s failed: %s", path, exc)
+            return None
 
     def _flush_batch(self) -> None:
         with self._lock:
@@ -276,7 +280,7 @@ class MetriconClient:
             batch = self._batch[:]
             self._batch.clear()
 
-        self._post("/api/v1/metrics/request/batch/", {"logs": batch})
+        self._post_json("/api/v1/metrics/request/batch/", {"logs": batch})
 
     def _heartbeat_loop(self) -> None:
         while self._running:
@@ -308,8 +312,41 @@ class MetriconClient:
             "cpu_percent": round(cpu, 2),
             "memory_mb": round(memory_mb, 2),
             "active_connections": connections,
+            "client_version": VERSION,
         }
-        self._post("/api/v1/bots/heartbeat/", payload)
+        response_data = self._post_json("/api/v1/bots/heartbeat/", payload)
+        if response_data:
+            self._check_for_update(response_data)
+
+    def _check_for_update(self, response_data: dict) -> None:
+        if not response_data.get("update"):
+            return
+        log.info("metricon_client update available — downloading")
+        threading.Thread(
+            target=self._perform_update, name="metricon-update", daemon=True
+        ).start()
+
+    def _perform_update(self) -> None:
+        import os
+        import sys
+        from pathlib import Path
+
+        try:
+            resp = _requests.get(
+                self.server_url + "/api/v1/client/latest/",
+                timeout=15,
+            )
+            resp.raise_for_status()
+
+            client_path = Path(__file__).resolve()
+            tmp_path = client_path.with_suffix(".tmp")
+            tmp_path.write_text(resp.text, encoding="utf-8")
+            tmp_path.replace(client_path)
+
+            log.info("metricon_client updated to latest — restarting process")
+            os.execv(sys.executable, [sys.executable] + sys.argv)
+        except Exception as exc:
+            log.warning("metricon_client auto-update failed: %s", exc)
 
 
 # ---------------------------------------------------------------------------

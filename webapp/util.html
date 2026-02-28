@@ -29,7 +29,7 @@
       border-bottom: 1px solid #e5e5e5;
     }
 
-    /* ── Вибір шаблону / розміру ── */
+    /* ── Сегментований контрол ── */
     .seg-label {
       font-size: 12px;
       font-weight: 600;
@@ -38,6 +38,16 @@
       letter-spacing: 0.05em;
       margin-bottom: 5px;
     }
+    /* 2×2 сітка шаблонів */
+    .template-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3px;
+      background: #f0f0f5;
+      border-radius: 8px;
+      padding: 2px;
+    }
+    /* Рядок розмірів */
     .seg-ctrl {
       display: flex;
       background: #f0f0f5;
@@ -56,12 +66,12 @@
       background: none;
       color: #888;
       cursor: pointer;
-      transition: background 0.15s, color 0.15s;
+      transition: background 0.12s, color 0.12s;
     }
     .seg-btn.active {
       background: #fff;
       color: #222;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+      box-shadow: 0 1px 3px rgba(0,0,0,.15);
     }
 
     /* ── Поле причини ── */
@@ -100,37 +110,46 @@
     .check-item {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 5px 4px;
       border-radius: 6px;
     }
-    .check-item input[type="checkbox"] {
-      width: 18px; height: 18px;
-      cursor: pointer;
-      accent-color: var(--tg-theme-button-color, #2481cc);
-      flex-shrink: 0;
+    .check-item.unchecked .item-text {
+      text-decoration: line-through;
+      color: #aaa;
     }
+
+    /* Зона чекбокса — широка для надійного тапу */
+    .cb-area {
+      display: flex;
+      align-items: center;
+      padding: 6px 10px 6px 4px;
+      cursor: pointer;
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .cb-area input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      pointer-events: none; /* кліки обробляє cb-area */
+      accent-color: var(--tg-theme-button-color, #2481cc);
+    }
+
+    /* Редагований текст пункту */
     .item-text {
       flex: 1;
       font-size: 14px;
       outline: none;
       cursor: text;
       min-width: 0;
-      padding: 1px 2px;
+      padding: 6px 2px;
       border-radius: 4px;
-      user-select: text;
     }
-    .item-text:focus {
-      background: #f5f5f5;
-    }
+    .item-text:focus { background: #f5f5f5; }
     .item-text:empty::before {
       content: 'Введіть назву...';
       color: #bbb;
     }
-    .check-item.unchecked .item-text {
-      text-decoration: line-through;
-      color: #aaa;
-    }
+
+    /* Кнопка видалення пункту */
     .item-del {
       background: none;
       border: none;
@@ -138,11 +157,12 @@
       font-size: 20px;
       line-height: 1;
       cursor: pointer;
-      padding: 0 3px;
+      padding: 6px 4px;
       flex-shrink: 0;
     }
     .item-del:hover { color: #e55; }
 
+    /* Кнопка додати пункт */
     .add-item-btn {
       display: block;
       width: 100%;
@@ -157,6 +177,13 @@
       text-align: center;
     }
     .add-item-btn:active { background: #f5f5f5; }
+
+    /* Поля утиля (Причина + Комплектація + Розмір) */
+    #util-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
 
     /* ── Превью ── */
     .preview-wrap {
@@ -200,40 +227,28 @@
       cursor: pointer;
     }
 
-    /* ── Вміст наклейки ── */
-    .print-title {
-      text-align: center;
-      font-size: 12pt;
-      font-weight: bold;
-      text-decoration: underline;
-      margin-bottom: 1.5mm;
-    }
-    .print-reason {
-      font-size: 9pt;
-      font-weight: bold;
-      margin-bottom: 1.5mm;
-    }
-    .print-kit-title {
-      text-align: center;
-      font-size: 9pt;
-      font-weight: bold;
-      margin-bottom: 1mm;
-    }
-    .print-kit-list {
-      list-style: none;
-      padding: 0;
-    }
-    .print-kit-list li {
-      font-size: 9pt;
-      font-weight: bold;
-      line-height: 1.2;
-    }
+    /* ── Вміст наклейки «Утіль» ── */
+    .print-title { text-align: center; font-size: 12pt; font-weight: bold; text-decoration: underline; margin-bottom: 1.5mm; }
+    .print-reason { font-size: 9pt; font-weight: bold; margin-bottom: 1.5mm; }
+    .print-kit-title { text-align: center; font-size: 9pt; font-weight: bold; margin-bottom: 1mm; }
+    .print-kit-list { list-style: none; padding: 0; }
+    .print-kit-list li { font-size: 9pt; font-weight: bold; line-height: 1.2; }
     .print-kit-list li::before { content: "- "; }
-    .print-kit-list li.missing {
-      text-decoration: line-through;
-      font-weight: normal;
-      color: #888;
+    .print-kit-list li.missing { text-decoration: line-through; font-weight: normal; color: #888; }
+
+    /* ── Вміст наклейок «На відправку» / «Крихке» ── */
+    .label-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: calc(var(--ph, 100mm) - 6mm);
+      text-align: center;
+      font-family: Arial, sans-serif;
     }
+    .label-symbol    { font-size: 46pt; line-height: 1.1; }
+    .label-big-text  { font-size: 28pt; font-weight: 900; letter-spacing: 2px; line-height: 1.1; }
+    .label-small-text{ font-size: 10pt; margin-top: 2mm; color: #555; }
 
     /* ══════════════════════════════
        ПЕЧАТЬ
@@ -246,10 +261,7 @@
         height: var(--ph, 100mm);
         overflow: hidden;
       }
-      .form-section,
-      .preview-title-bar,
-      .print-btn { display: none !important; }
-
+      .form-section, .preview-title-bar, .print-btn { display: none !important; }
       .preview-wrap { padding: 0; align-items: flex-start; }
       .print-area {
         border: none;
@@ -263,46 +275,42 @@
 </head>
 <body>
 
-  <!-- Форма -->
   <div class="form-section">
-
-    <!-- Шаблон -->
+    <!-- Вибір шаблону -->
     <div>
       <div class="seg-label">Шаблон</div>
-      <div class="seg-ctrl">
-        <button class="seg-btn" id="tab-korpus" onclick="setTemplate('korpus')">Корпус</button>
-        <button class="seg-btn" id="tab-inше"   onclick="setTemplate('inше')">Інше</button>
+      <div class="template-grid">
+        <button class="seg-btn" id="tab-korpus"   onclick="setTemplate('korpus')">Корпус</button>
+        <button class="seg-btn" id="tab-other"    onclick="setTemplate('other')">Інше</button>
+        <button class="seg-btn" id="tab-shipping" onclick="setTemplate('shipping')">На відправку</button>
+        <button class="seg-btn" id="tab-fragile"  onclick="setTemplate('fragile')">Крихке</button>
       </div>
     </div>
 
-    <!-- Причина -->
-    <div class="field">
-      <label>Причина</label>
-      <input type="text" id="reason" placeholder="Введіть причину..." oninput="updatePreview()">
-    </div>
-
-    <!-- Комплектація -->
-    <div>
-      <div class="checklist-label">Комплектація</div>
-      <div class="checklist" id="checklist"></div>
-      <button class="add-item-btn" onclick="addItem()">＋ Додати пункт</button>
-    </div>
-
-    <!-- Розмір (тільки для «Інше») -->
-    <div id="size-row" style="display:none">
-      <div class="seg-label">Розмір наклейки</div>
-      <div class="seg-ctrl">
-        <button class="seg-btn" id="sz-100" onclick="setSize('100x100')">100×100 мм</button>
-        <button class="seg-btn" id="sz-50"  onclick="setSize('50x40')">50×40 мм</button>
+    <!-- Поля утиля (Причина + Комплектація + Розмір) -->
+    <div id="util-fields">
+      <div class="field">
+        <label>Причина</label>
+        <input type="text" id="reason" placeholder="Введіть причину..." oninput="updatePreview()">
+      </div>
+      <div>
+        <div class="checklist-label">Комплектація</div>
+        <div class="checklist" id="checklist"></div>
+        <button class="add-item-btn" onclick="addItem()">＋ Додати пункт</button>
+      </div>
+      <div id="size-row" style="display:none">
+        <div class="seg-label">Розмір наклейки</div>
+        <div class="seg-ctrl">
+          <button class="seg-btn" id="sz-100" onclick="setSize('100x100')">100×100 мм</button>
+          <button class="seg-btn" id="sz-50"  onclick="setSize('50x40')">50×40 мм</button>
+        </div>
       </div>
     </div>
-
   </div>
 
   <!-- Превью + кнопка -->
   <div class="preview-wrap">
     <div class="preview-title-bar">Попередній перегляд</div>
-    <!-- Ця область ЗАВЖДИ в DOM — гарантовано друкується -->
     <div class="print-area" id="print-area"></div>
     <button class="print-btn" onclick="doPrint()">Друк</button>
   </div>
@@ -317,12 +325,23 @@
       'Вентилятори','Пильові фільтри','USB інтерфейси','Кнопка живлення',
     ];
 
-    const checklist = document.getElementById('checklist');
+    const LABEL_HTML = {
+      shipping: `<div class="label-wrap">
+        <div class="label-big-text">НА ВІДПРАВКУ</div>
+        <div class="label-symbol">&#8594;</div>
+      </div>`,
+      fragile: `<div class="label-wrap">
+        <div class="label-symbol">&#9651;</div>
+        <div class="label-big-text">КРИХКЕ</div>
+        <div class="label-small-text">Поводитися обережно</div>
+      </div>`,
+    };
 
+    const checklist = document.getElementById('checklist');
     let curTemplate = localStorage.getItem('util_template') || 'korpus';
     let curSize     = localStorage.getItem('util_size')     || '50x40';
 
-    // ── Ініціалізація ──
+    // Ініціалізація
     applyTemplate(curTemplate, true);
 
     // ─────────────────────────────────────────
@@ -335,29 +354,40 @@
     }
 
     function applyTemplate(tpl, isInit) {
-      document.getElementById('tab-korpus').classList.toggle('active', tpl === 'korpus');
-      document.getElementById('tab-inше').classList.toggle('active',   tpl === 'inше');
+      ['korpus','other','shipping','fragile'].forEach(t =>
+        document.getElementById('tab-' + t).classList.toggle('active', t === tpl));
 
-      const sizeRow = document.getElementById('size-row');
-      sizeRow.style.display = tpl === 'inше' ? 'block' : 'none';
+      const utilFields = document.getElementById('util-fields');
+      const sizeRow    = document.getElementById('size-row');
+
+      // Наклейки-шаблони — приховуємо форму
+      if (tpl === 'shipping' || tpl === 'fragile') {
+        utilFields.style.display = 'none';
+        document.getElementById('print-area').innerHTML = LABEL_HTML[tpl];
+        applySizeVars(100, 100);
+        return;
+      }
+
+      utilFields.style.display = 'flex';
+      sizeRow.style.display = tpl === 'other' ? 'block' : 'none';
 
       // Перезавантажити список
       checklist.innerHTML = '';
       if (tpl === 'korpus') {
         const saved = JSON.parse(localStorage.getItem('util_checks') || 'null');
         KORPUS_ITEMS.forEach((text, i) => createRow(text, saved ? !!saved[i] : true));
-        // Для корпусу — розмір завжди 100×100
         applySizeVars(100, 100);
       } else {
-        // Для «Інше» — порожній список, застосовуємо збережений розмір
+        // other — порожній список
         applySizeButton(curSize);
       }
 
+      if (!isInit) document.getElementById('reason').value = '';
       updatePreview();
     }
 
     // ─────────────────────────────────────────
-    // Розмір (тільки для «Інше»)
+    // Розмір
     // ─────────────────────────────────────────
     function setSize(sz) {
       curSize = sz;
@@ -384,15 +414,23 @@
       const row = document.createElement('div');
       row.className = 'check-item' + (checked ? '' : ' unchecked');
 
+      // Зона чекбокса — широка для надійного тапу
+      const cbArea = document.createElement('div');
+      cbArea.className = 'cb-area';
+
       const cb = document.createElement('input');
       cb.type = 'checkbox';
       cb.checked = checked;
-      cb.addEventListener('change', () => {
+      cbArea.appendChild(cb);
+
+      cbArea.addEventListener('click', () => {
+        cb.checked = !cb.checked;
         row.classList.toggle('unchecked', !cb.checked);
         if (curTemplate === 'korpus') saveChecks();
         updatePreview();
       });
 
+      // Редагований текст
       const span = document.createElement('span');
       span.className = 'item-text';
       span.contentEditable = 'true';
@@ -401,17 +439,20 @@
       span.addEventListener('keydown', e => {
         if (e.key === 'Enter') { e.preventDefault(); span.blur(); }
       });
+      // Клік по тексту не повинен доходити до cbArea
+      span.addEventListener('click', e => e.stopPropagation());
 
+      // Видалити
       const del = document.createElement('button');
       del.className = 'item-del';
       del.innerHTML = '&times;';
-      del.title = 'Видалити';
-      del.addEventListener('click', () => {
+      del.addEventListener('click', e => {
+        e.stopPropagation();
         row.remove();
         updatePreview();
       });
 
-      row.appendChild(cb);
+      row.appendChild(cbArea);
       row.appendChild(span);
       row.appendChild(del);
       checklist.appendChild(row);
@@ -434,8 +475,10 @@
     // Превью
     // ─────────────────────────────────────────
     function updatePreview() {
+      if (curTemplate === 'shipping' || curTemplate === 'fragile') return;
+
       const reason = document.getElementById('reason').value.trim() || '—';
-      const rows = [...checklist.querySelectorAll('.check-item')];
+      const rows   = [...checklist.querySelectorAll('.check-item')];
 
       let kitSection = '';
       if (rows.length > 0) {
@@ -460,7 +503,7 @@
     // ─────────────────────────────────────────
     function doPrint() {
       let w = 100, h = 100;
-      if (curTemplate === 'inше' && curSize === '50x40') { w = 50; h = 40; }
+      if (curTemplate === 'other' && curSize === '50x40') { w = 50; h = 40; }
       document.getElementById('page-size-style').textContent =
         `@page { size: ${w}mm ${h}mm; margin: 0; }`;
       applySizeVars(w, h);

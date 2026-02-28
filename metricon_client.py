@@ -30,9 +30,9 @@ Usage:
 
     client.stop()
 """
-VERSION = "1.1.0"
-
 from __future__ import annotations
+
+VERSION = "1.1.0"
 
 import asyncio
 import functools

@@ -246,9 +246,9 @@
       text-align: center;
       font-family: Arial, sans-serif;
     }
-    .label-symbol    { font-size: 46pt; line-height: 1.1; }
-    .label-big-text  { font-size: 28pt; font-weight: 900; letter-spacing: 2px; line-height: 1.1; }
-    .label-small-text{ font-size: 10pt; margin-top: 2mm; color: #555; }
+    .label-big-text  { font-size: 36pt; font-weight: 900; letter-spacing: 2px; line-height: 1.1; font-family: Arial, sans-serif; }
+    .label-sub-text  { font-size: 13pt; margin-top: 3mm; color: #333; font-family: Arial, sans-serif; }
+    .label-glass-svg { width: 58mm; height: 75mm; display: block; margin: 0 auto 3mm; }
 
     /* ══════════════════════════════
        ПЕЧАТЬ
@@ -327,13 +327,14 @@
 
     const LABEL_HTML = {
       shipping: `<div class="label-wrap">
-        <div class="label-big-text">НА ВІДПРАВКУ</div>
-        <div class="label-symbol">&#8594;</div>
+        <div class="label-big-text">ГОТОВО</div>
+        <div class="label-sub-text">На відправку клієнту</div>
       </div>`,
       fragile: `<div class="label-wrap">
-        <div class="label-symbol">&#9651;</div>
-        <div class="label-big-text">КРИХКЕ</div>
-        <div class="label-small-text">Поводитися обережно</div>
+        <svg class="label-glass-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 130">
+          <path fill="#222" d="M15,5H85Q94,5 90,30Q86,55 70,68Q62,76 55,80V108L74,114L74,122L26,122L26,114L45,108V80Q38,76 30,68Q14,55 10,30Q6,5 15,5Z"/>
+        </svg>
+        <div class="label-big-text">КРИХКЕ!</div>
       </div>`,
     };
 

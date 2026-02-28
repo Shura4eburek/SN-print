@@ -3,3 +3,5 @@ qrcode[pil]>=7.4
 python-barcode[images]>=0.15
 Pillow>=10.0
 python-dotenv>=1.0
+requests>=2.31
+psutil>=5.9

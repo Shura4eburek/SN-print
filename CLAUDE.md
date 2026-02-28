@@ -70,3 +70,38 @@ python bot.py             # запуск локально (polling)
 python -m pytest          # тесты
 python -m ruff check .    # lint
 ```
+
+● В этом проекте используется Metricon — система мониторинга метрик бота.                              
+  Dashboard: https://web-production-37313.up.railway.app
+                                                                                                       
+  ## Файл metricon_client.py уже есть в проекте — не создавай его заново.                              
+                                                                                                       
+  ## Что нужно делать при добавлении/изменении хендлеров:         
+
+  1. Каждый хендлер должен логировать запрос через `log_request(command, user_id, response_time_ms,
+  success)`
+  2. Все необработанные исключения — через `log_error(exception, command)`
+  3. При старте бота должна запускаться фоновая задача `heartbeat_loop()`
+
+  ## API (base URL: https://web-production-37313.up.railway.app):
+
+  - POST /api/v1/bots/heartbeat/         — пульс (каждые 60 сек)
+  - POST /api/v1/metrics/request/batch/  — логи запросов
+  - POST /api/v1/metrics/error/          — события ошибок
+  - POST /api/v1/metrics/custom/         — кастомные метрики
+
+  Аутентификация: заголовок X-API-Key (ключ в переменной окружения METRICON_API_KEY).
+
+  ## Формат log_request:
+  {"logs": [{"command": str, "user_id": str, "response_time_ms": int, "success": bool}]}
+
+  ## Формат log_error:
+  {"error_type": str, "message": str, "traceback": str, "command": str}
+
+  ## Формат heartbeat:
+  {"uptime_seconds": int, "cpu_percent": float, "memory_mb": float, "active_connections": int}
+
+  ## Важно:
+  - Все вызовы Metricon — fire-and-forget (asyncio.create_task), не await напрямую в хендлерах
+  - API ключ никогда не хардкодить, только через os.environ / .env
+  - Не трогать metricon_client.py без явной просьбы

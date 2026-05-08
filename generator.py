@@ -45,7 +45,7 @@ def _add_serial(img: Image.Image, text: str) -> Image.Image:
     return result
 
 
-def generate_qr(data: str) -> io.BytesIO:
+def generate_qr(data: str, include_text: bool = True) -> io.BytesIO:
     qr = qrcode.QRCode(
         error_correction=qrcode.constants.ERROR_CORRECT_M,
         box_size=10,
@@ -55,7 +55,7 @@ def generate_qr(data: str) -> io.BytesIO:
     qr.make(fit=True)
     img = qr.make_image(fill_color="black", back_color="white").convert("RGB")
     img = img.resize((RENDER_SIZE, RENDER_SIZE), Image.LANCZOS)
-    result = _add_serial(img, data)
+    result = _add_serial(img, data) if include_text else img
 
     buf = io.BytesIO()
     result.save(buf, format="PNG", dpi=(300, 300))
@@ -63,7 +63,7 @@ def generate_qr(data: str) -> io.BytesIO:
     return buf
 
 
-def generate_barcode(data: str) -> io.BytesIO:
+def generate_barcode(data: str, include_text: bool = True) -> io.BytesIO:
     writer = ImageWriter()
     code128 = barcode.get("code128", data, writer=writer)
     raw = io.BytesIO()
@@ -74,7 +74,7 @@ def generate_barcode(data: str) -> io.BytesIO:
     aspect = img.height / img.width
     render_h = int(RENDER_SIZE * aspect)
     img = img.resize((RENDER_SIZE, render_h), Image.LANCZOS)
-    result = _add_serial(img, data)
+    result = _add_serial(img, data) if include_text else img
 
     buf = io.BytesIO()
     result.save(buf, format="PNG", dpi=(300, 300))

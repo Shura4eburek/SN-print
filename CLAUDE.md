@@ -13,13 +13,15 @@ Virtual environment is in `.venv/` (excluded from version control).
 
 ## Файловая структура
 
-| Файл | Назначение |
-|---|---|
-| `bot.py` | Точка входа, хендлеры Telegram |
-| `generator.py` | Генерация PNG (QR + Code128, 900px, серийник под кодом) |
-| `webapp/index.html` | Mini App для печати (QR/Barcode, размер, CSS @page) |
-| `requirements.txt` | Зависимости |
-| `.env` | Секреты (не в git) |
+| Файл | Документация | Назначение |
+|---|---|---|
+| `bot.py` | [docs/bot.md](docs/bot.md) | Точка входа, хендлеры Telegram |
+| `generator.py` | [docs/generator.md](docs/generator.md) | Генерация PNG (QR + Code128) |
+| `metricon_client.py` | [docs/metricon.md](docs/metricon.md) | Клиент мониторинга Metricon |
+| `webapp/index.html` | [docs/webapp-index.md](docs/webapp-index.md) | Mini App для печати QR/barcode |
+| `webapp/util.html` | [docs/webapp-util.md](docs/webapp-util.md) | Mini App для наклейки утиля |
+| `requirements.txt` | — | Зависимости |
+| `.env` | — | Секреты (не в git) |
 
 ## Переменные окружения (.env)
 
@@ -27,35 +29,23 @@ Virtual environment is in `.venv/` (excluded from version control).
 BOT_TOKEN=...
 WEBAPP_URL=https://shura4eburek.github.io/SN-print/webapp/
 WEBHOOK_URL=https://xxx.up.railway.app   # Railway URL
+METRICON_API_KEY=...                     # ключ для Metricon
+METRICON_URL=https://web-production-37313.up.railway.app  # можно переопределить
 # PORT выставляет Railway автоматически
 ```
 
-## Логика бота
+## Ключевые факты
 
-1. Пользователь отправляет серийный номер текстом
-2. Бот отвечает: серийник + кнопки **[📎 В чат]** **[🖨 На печать]**
-3. **В чат** → callback `send_to_chat` → генерирует QR + barcode в thread pool → отправляет 2 PNG
-4. **На печать** → WebAppInfo → открывает webapp с `?data=SERIAL`
-
-## Технические детали
-
-- Webhook если `PORT` + `WEBHOOK_URL` заданы, иначе polling (локально)
-- Генерация через `loop.run_in_executor` — не блокирует event loop
-- QR и barcode генерируются параллельно через `asyncio.gather`
-- `context.user_data['serial']` — последний серийник для callback
+- Webhook если `PORT` + `WEBHOOK_URL` заданы, иначе polling
 - `requirements.txt` должен содержать `python-telegram-bot[webhooks]` (не просто `python-telegram-bot`)
-
-## Webapp (webapp/index.html)
-
-- Кнопки типа: **QR код** / **Штрих-код** — переключают отображение, сохраняются в localStorage
-- Кнопки размера: **100×100 мм** / **50×40 мм** — задают `@page { size: Wmm Hmm; margin: 0 }`
-- JS вставляет стиль перед печатью → нет колонтитулов, автомасштаб под лист
+- Metricon: вызовы синхронные (`track_request`, `track_error`), клиент сам отправляет в daemon-тредах
+- `metricon_client.py` не изменять без явной просьбы — может автообновляться с сервера
 
 ## Railway
 
 - `Procfile`: `web: python bot.py`
 - `.python-version`: `3.11`
-- Переменные: `BOT_TOKEN`, `WEBAPP_URL`, `WEBHOOK_URL` (PORT — автоматически)
+- Переменные: `BOT_TOKEN`, `WEBAPP_URL`, `WEBHOOK_URL`, `METRICON_API_KEY` (PORT — автоматически)
 
 ## Environment
 
@@ -70,38 +60,3 @@ python bot.py             # запуск локально (polling)
 python -m pytest          # тесты
 python -m ruff check .    # lint
 ```
-
-● В этом проекте используется Metricon — система мониторинга метрик бота.                              
-  Dashboard: https://web-production-37313.up.railway.app
-                                                                                                       
-  ## Файл metricon_client.py уже есть в проекте — не создавай его заново.                              
-                                                                                                       
-  ## Что нужно делать при добавлении/изменении хендлеров:         
-
-  1. Каждый хендлер должен логировать запрос через `log_request(command, user_id, response_time_ms,
-  success)`
-  2. Все необработанные исключения — через `log_error(exception, command)`
-  3. При старте бота должна запускаться фоновая задача `heartbeat_loop()`
-
-  ## API (base URL: https://web-production-37313.up.railway.app):
-
-  - POST /api/v1/bots/heartbeat/         — пульс (каждые 60 сек)
-  - POST /api/v1/metrics/request/batch/  — логи запросов
-  - POST /api/v1/metrics/error/          — события ошибок
-  - POST /api/v1/metrics/custom/         — кастомные метрики
-
-  Аутентификация: заголовок X-API-Key (ключ в переменной окружения METRICON_API_KEY).
-
-  ## Формат log_request:
-  {"logs": [{"command": str, "user_id": str, "response_time_ms": int, "success": bool}]}
-
-  ## Формат log_error:
-  {"error_type": str, "message": str, "traceback": str, "command": str}
-
-  ## Формат heartbeat:
-  {"uptime_seconds": int, "cpu_percent": float, "memory_mb": float, "active_connections": int}
-
-  ## Важно:
-  - Все вызовы Metricon — fire-and-forget (asyncio.create_task), не await напрямую в хендлерах
-  - API ключ никогда не хардкодить, только через os.environ / .env
-  - Не трогать metricon_client.py без явной просьбы

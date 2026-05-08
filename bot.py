@@ -129,25 +129,69 @@ async def callback_send_to_chat(update: Update, context: ContextTypes.DEFAULT_TY
                                    str(update.effective_user.id), success=False)
         return
 
-    loop = asyncio.get_event_loop()
-    try:
-        qr_buf, bar_buf = await asyncio.gather(
-            loop.run_in_executor(None, generate_qr, serial),
-            loop.run_in_executor(None, generate_barcode, serial),
-        )
-    except Exception as exc:
-        logger.error("Generation error: %s", exc)
-        await query.message.reply_text(f"Ошибка генерации: {exc}")
-        if metricon:
-            metricon.track_request("/send_to_chat", int((time.monotonic() - t0) * 1000),
-                                   str(update.effective_user.id), success=False)
-            metricon.track_error(exc, command="/send_to_chat")
-        return
-
-    await query.message.reply_document(document=qr_buf, filename=f"{serial}_qr.png")
-    await query.message.reply_document(document=bar_buf, filename=f"{serial}_barcode.png")
+    buttons = [[
+        InlineKeyboardButton("📷 QR код", callback_data="send_qr"),
+        InlineKeyboardButton("📊 Штрих-код", callback_data="send_barcode"),
+    ]]
+    await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(buttons))
     if metricon:
         metricon.track_request("/send_to_chat", int((time.monotonic() - t0) * 1000),
+                               str(update.effective_user.id), success=True)
+
+
+async def callback_send_qr(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    t0 = time.monotonic()
+    query = update.callback_query
+    await query.answer()
+
+    serial = context.user_data.get("serial")
+    if not serial:
+        await query.answer("Серийный номер не найден, отправь его снова", show_alert=True)
+        return
+
+    loop = asyncio.get_event_loop()
+    try:
+        buf = await loop.run_in_executor(None, generate_qr, serial, False)
+    except Exception as exc:
+        logger.error("QR generation error: %s", exc)
+        await query.message.reply_text(f"Ошибка генерации: {exc}")
+        if metricon:
+            metricon.track_request("/send_qr", int((time.monotonic() - t0) * 1000),
+                                   str(update.effective_user.id), success=False)
+            metricon.track_error(exc, command="/send_qr")
+        return
+
+    await query.message.reply_document(document=buf, filename=f"{serial}_qr.png")
+    if metricon:
+        metricon.track_request("/send_qr", int((time.monotonic() - t0) * 1000),
+                               str(update.effective_user.id), success=True)
+
+
+async def callback_send_barcode(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    t0 = time.monotonic()
+    query = update.callback_query
+    await query.answer()
+
+    serial = context.user_data.get("serial")
+    if not serial:
+        await query.answer("Серийный номер не найден, отправь его снова", show_alert=True)
+        return
+
+    loop = asyncio.get_event_loop()
+    try:
+        buf = await loop.run_in_executor(None, generate_barcode, serial, False)
+    except Exception as exc:
+        logger.error("Barcode generation error: %s", exc)
+        await query.message.reply_text(f"Ошибка генерации: {exc}")
+        if metricon:
+            metricon.track_request("/send_barcode", int((time.monotonic() - t0) * 1000),
+                                   str(update.effective_user.id), success=False)
+            metricon.track_error(exc, command="/send_barcode")
+        return
+
+    await query.message.reply_document(document=buf, filename=f"{serial}_barcode.png")
+    if metricon:
+        metricon.track_request("/send_barcode", int((time.monotonic() - t0) * 1000),
                                str(update.effective_user.id), success=True)
 
 
@@ -163,6 +207,8 @@ def main() -> None:
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_serial))
     app.add_handler(CallbackQueryHandler(callback_send_to_chat, pattern="^send_to_chat$"))
+    app.add_handler(CallbackQueryHandler(callback_send_qr, pattern="^send_qr$"))
+    app.add_handler(CallbackQueryHandler(callback_send_barcode, pattern="^send_barcode$"))
 
     if PORT and WEBHOOK_URL:
         logger.info("Запуск в режиме webhook на порту %d", PORT)

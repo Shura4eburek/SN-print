@@ -17,9 +17,11 @@
 
 | Хендлер | Триггер | Действие |
 |---|---|---|
-| `cmd_start` | `/start` | Приветствие + ReplyKeyboard с кнопкой «Створити утиль» |
+| `cmd_start` | `/start` | Приветствие + ReplyKeyboard с кнопкой «Друк інших наклейок» |
 | `handle_serial` | любой текст | `clean_serial()` → сохранить в `context.user_data['serial']` → кнопки В чат / На печать |
-| `callback_send_to_chat` | callback `send_to_chat` | `asyncio.gather` двух `run_in_executor` → 2 PNG в чат |
+| `callback_send_to_chat` | callback `send_to_chat` | Редактирует клавиатуру сообщения на кнопки QR код / Штрих-код |
+| `callback_send_qr` | callback `send_qr` | Генерирует QR без текста (`include_text=False`) → PNG в чат |
+| `callback_send_barcode` | callback `send_barcode` | Генерирует barcode без текста (`include_text=False`) → PNG в чат |
 
 ## Логика запуска
 
@@ -33,9 +35,15 @@ re.sub(r'^[^\w\-]+', '', text.strip())
 ```
 Убирает ведущие нечитаемые символы, которые добавляют некоторые сканеры (напр. `[`).
 
+## Флоу «В чат»
+
+1. Пользователь нажимает «📎 В чат»
+2. `callback_send_to_chat` редактирует клавиатуру того же сообщения → **[📷 QR код] [📊 Штрих-код]**
+3. Нажатие на любую кнопку отправляет PNG без серийника под кодом. Кнопки остаются — можно получить оба варианта.
+
 ## ReplyKeyboard
 
-`make_reply_keyboard()` возвращает постоянную кнопку над полем ввода, открывающую `util.html` через WebAppInfo. Возвращает `None`, если `WEBAPP_URL` не задан.
+`make_reply_keyboard()` возвращает постоянную кнопку над полем ввода («Друк інших наклейок»), открывающую `util.html` через WebAppInfo. Возвращает `None`, если `WEBAPP_URL` не задан.
 
 ## Metricon в хендлерах
 
